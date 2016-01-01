@@ -13,6 +13,11 @@ namespace CoCore.iOS
 		GroupRoot _dataSource;
 		readonly UITableView _tableView;
 
+
+	    public event EventHandler<NSIndexPath> SelectionChanged;
+
+        public GroupCell SelectedItem { get; private set; }
+
 	    public UITableView TableView => _tableView;
 
 	    public UITableViewRowAnimation AddSectionAnimation
@@ -156,26 +161,32 @@ namespace CoCore.iOS
 		    return cell;
 		}
 
-		public override void RowSelected (UITableView tableView, NSIndexPath indexPath)
-		{
-			var item = _dataSource [indexPath.Section] [indexPath.Row];
-			if (item != null) {
-				var isRowClick = item.CellStyle.Has (GroupCellStyle.RowClick);
-				var isCheckMark = item.CellStyle.Has (GroupCellStyle.CheckMark);
-				if (isRowClick) {
-					if (item.Command != null && item.Command.CanExecute (indexPath)) {
-						item.Command.Execute (indexPath);
-					}
-                    tableView.DeselectRow(indexPath, true);
-                }
-				if (isCheckMark) {
-					item.IsSelected = !item.IsSelected;
-					tableView.ReloadRows (new[]{ indexPath }, UITableViewRowAnimation.Automatic);
-				}
-			}
-		}
+	    public override void RowSelected(UITableView tableView, NSIndexPath indexPath)
+	    {
+	        var item = _dataSource[indexPath.Section][indexPath.Row];
+	        if (item != null)
+	        {
+	            SelectedItem = item;
+                OnSelectionChanged(indexPath);
+	            var isRowClick = item.CellStyle.Has(GroupCellStyle.RowClick);
+	            var isCheckMark = item.CellStyle.Has(GroupCellStyle.CheckMark);
+	            if (isRowClick)
+	            {
+	                if (item.Command != null && item.Command.CanExecute(indexPath))
+	                {
+	                    item.Command.Execute(indexPath);
+	                }
+	                tableView.DeselectRow(indexPath, true);
+	            }
+	            if (isCheckMark)
+	            {
+	                item.IsSelected = !item.IsSelected;
+	                tableView.ReloadRows(new[] {indexPath}, UITableViewRowAnimation.Automatic);
+	            }
+	        }
+	    }
 
-		public override void AccessoryButtonTapped (UITableView tableView, NSIndexPath indexPath)
+	    public override void AccessoryButtonTapped (UITableView tableView, NSIndexPath indexPath)
 		{
 			var item = _dataSource [indexPath.Section] [indexPath.Row];
 			if (item != null) {
@@ -338,6 +349,11 @@ namespace CoCore.iOS
 		}
 
 		#endregion
+
+	    protected virtual void OnSelectionChanged(NSIndexPath e)
+	    {
+	        SelectionChanged?.Invoke(this, e);
+	    }
 	}
 }
 

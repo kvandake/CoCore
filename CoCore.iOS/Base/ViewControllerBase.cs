@@ -1,13 +1,36 @@
-﻿using CoCore.Base;
+﻿using System;
+using CoCore.Base;
+using Foundation;
 using UIKit;
 
 namespace CoCore.iOS
 {
-	public class ViewControllerBase<T> : UIViewController,IReturnWithResult,IContext where T: ViewModelBase,new()
+	public abstract class ViewControllerBase<T> : UIViewController,IReturnWithResult,IContext where T: ViewModelBase,new()
 	{
+        protected ViewControllerBase()
+	    {
+	    }
+
+        protected ViewControllerBase(NSCoder coder) : base(coder)
+	    {
+	    }
+
+        protected ViewControllerBase(NSObjectFlag t) : base(t)
+	    {
+	    }
+
+        protected ViewControllerBase(IntPtr handle) : base(handle)
+	    {
+	    }
+
+	    protected ViewControllerBase(string nibName, NSBundle bundle) : base(nibName, bundle)
+	    {
+	    }
 
 
-		public Intent Context { get; set;}
+
+
+	    public Intent Context { get; set;}
 
 
 		T _dataContext;
