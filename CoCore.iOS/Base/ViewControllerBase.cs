@@ -3,7 +3,7 @@ using UIKit;
 
 namespace CoCore.iOS
 {
-	public class ViewControllerBase<T> : UIViewController,IReturnWithResult where T: ViewModelBase,new()
+	public class ViewControllerBase<T> : UIViewController,IReturnWithResult,IContext where T: ViewModelBase,new()
 	{
 
 

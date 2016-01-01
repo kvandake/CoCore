@@ -47,22 +47,22 @@
     <Compile Include="Implements\TouchBootstrapBuilder.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
-  <ItemGroup />
   <ItemGroup>
+    <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="CoCore.Base, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\CoCore.Base.1.0.1\lib\portable-net45+win+wp80+MonoAndroid10+xamarinios10+MonoTouch10\CoCore.Base.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="CoCore.Binding, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\CoCore.Binding.1.0.0\lib\portable-net45+win+wpa81+MonoAndroid10+xamarinios10+MonoTouch10\CoCore.Binding.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Xml" />
     <Reference Include="System.Core" />
     <Reference Include="Xamarin.iOS" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\CoCore.Base\CoCore.Base.csproj">
-      <Project>{a5c002f2-ee59-4976-91da-42c7d5810bc8}</Project>
-      <Name>CoCore.Base</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\CoCore.Binding\CoCore.Binding.csproj">
-      <Project>{55f377d8-ae4c-40e3-9e9b-21002be2b633}</Project>
-      <Name>CoCore.Binding</Name>
-    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath)\Xamarin\iOS\Xamarin.iOS.CSharp.targets" />
 </Project>
