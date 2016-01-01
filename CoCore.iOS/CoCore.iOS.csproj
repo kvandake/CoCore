@@ -52,11 +52,11 @@
   </ItemGroup>
   <ItemGroup>
     <Reference Include="CoCore.Base, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\..\CoCore.Nuget\packages\CoCore.Base.1.0.1\lib\portable-net45+win+wp80+MonoAndroid10+xamarinios10+MonoTouch10\CoCore.Base.dll</HintPath>
+      <HintPath>..\packages\CoCore.Base.1.0.1\lib\portable-net45+win+wp80+MonoAndroid10+xamarinios10+MonoTouch10\CoCore.Base.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="CoCore.Binding, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\..\CoCore.Nuget\packages\CoCore.Binding.1.0.0\lib\portable-net45+win+wpa81+MonoAndroid10+xamarinios10+MonoTouch10\CoCore.Binding.dll</HintPath>
+      <HintPath>..\packages\CoCore.Binding.1.0.0\lib\portable-net45+win+wpa81+MonoAndroid10+xamarinios10+MonoTouch10\CoCore.Binding.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="System" />

@@ -13,9 +13,9 @@ namespace CoCore.iOS
 		GroupRoot _dataSource;
 		readonly UITableView _tableView;
 
+	    public UITableView TableView => _tableView;
 
-
-		public UITableViewRowAnimation AddSectionAnimation
+	    public UITableViewRowAnimation AddSectionAnimation
 		{
 			get;
 			set;
@@ -41,10 +41,22 @@ namespace CoCore.iOS
 			set;
 		}
 
+        public UITableViewRowAnimation ReloadSectionAnimation
+        {
+            get;
+            set;
+        }
+
+        public UITableViewRowAnimation ReloadCellAnimation
+        {
+            get;
+            set;
+        }
 
 
 
-		public GroupRoot DataSource {
+
+        public GroupRoot DataSource {
 			get {
 				return _dataSource;
 			}
@@ -76,7 +88,9 @@ namespace CoCore.iOS
 			DeleteCellAnimation = UITableViewRowAnimation.Automatic;
 			AddSectionAnimation = UITableViewRowAnimation.Automatic;
 			DeleteSectionAnimation = UITableViewRowAnimation.Automatic;
-		}
+            ReloadCellAnimation = UITableViewRowAnimation.Automatic;
+            ReloadSectionAnimation = UITableViewRowAnimation.Automatic;
+        }
 
 		public GroupTableSource (UITableView tableView, GroupRoot dataSource):this(tableView)
 		{
@@ -151,9 +165,9 @@ namespace CoCore.iOS
 				if (isRowClick) {
 					if (item.Command != null && item.Command.CanExecute (indexPath)) {
 						item.Command.Execute (indexPath);
-						tableView.DeselectRow (indexPath, true);
 					}
-				}
+                    tableView.DeselectRow(indexPath, true);
+                }
 				if (isCheckMark) {
 					item.IsSelected = !item.IsSelected;
 					tableView.ReloadRows (new[]{ indexPath }, UITableViewRowAnimation.Automatic);
@@ -226,7 +240,7 @@ namespace CoCore.iOS
 						return;
 					_tableView.ReloadSectionIndexTitles ();
 					var sectionReplace = NSIndexSet.FromIndex(e.NewStartingIndex);
-					_tableView.ReloadSections(sectionReplace, UITableViewRowAnimation.Fade);
+					_tableView.ReloadSections(sectionReplace, ReloadSectionAnimation);
 					break;
 				case NotifyCollectionChangedAction.Reset:
 					_tableView.ReloadData();
@@ -291,7 +305,7 @@ namespace CoCore.iOS
 					_tableView.ReloadRows(new[]
 						{
 							indexPath
-						}, UITableViewRowAnimation.Fade);
+						}, ReloadCellAnimation);
 					break;
 				case NotifyCollectionChangedAction.Move:
 					if (e.NewItems.Count != 1 && e.OldItems.Count != 1)
