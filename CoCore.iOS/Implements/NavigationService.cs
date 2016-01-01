@@ -107,7 +107,9 @@ namespace CoCore.iOS
 			foreach (var item in parameters) {
 				isPush |= _toPush == item;
 				isPresent |= _toPresent == item;
-				convert = Converts.FirstOrDefault (x => x.Key == item).Value;
+				if (convert == null) {
+					convert = Converts.FirstOrDefault (x => x.Key == item).Value;
+				}
 			}
 			var view = Create (type, intent) as UIViewController;
 			if (convert != null) {
@@ -145,19 +147,18 @@ namespace CoCore.iOS
 			var navVc = topVc.NavigationController;
 			if (navVc != null) {
 				bool result;
-				if (navVc.PresentingViewController != null) {
+				var vControllers = navVc.ViewControllers;
+				if (vControllers.Length > 1) {
+					var vcBack = vControllers [vControllers.Length - 2];
+					result = SendToResult (vcBack, intent);
+					navVc.PopViewController (UseAnimated);
+					return result;
+				} else if (navVc.PresentingViewController != null) {
 					result = SendToResult (navVc.PresentingViewController, intent);
 					navVc.DismissViewController (UseAnimated, null);
 					return result;
 				}
-				var vControllers = navVc.ViewControllers;
-				result = false;
-				if (vControllers.Length > 1) {
-					var vcBack = vControllers [vControllers.Length - 2];
-					result = SendToResult (vcBack, intent);
-				}
-				navVc.PopViewController (UseAnimated);
-				return result;
+				return false;
 			}
 			var vc = BackViewControllerWithRootViewController (topVc.PresentingViewController);
 			topVc.DismissViewController (UseAnimated, null);
