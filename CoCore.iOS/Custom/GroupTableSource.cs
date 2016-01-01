@@ -164,10 +164,15 @@ namespace CoCore.iOS
 	    public override void RowSelected(UITableView tableView, NSIndexPath indexPath)
 	    {
 	        var item = _dataSource[indexPath.Section][indexPath.Row];
-	        if (item != null)
+	        if (item == null) return;
+	        var handler = SelectionChanged;
+	        if (handler != null)
 	        {
 	            SelectedItem = item;
-                OnSelectionChanged(indexPath);
+	            handler(this, indexPath);
+	        }
+	        else
+	        {
 	            var isRowClick = item.CellStyle.Has(GroupCellStyle.RowClick);
 	            var isCheckMark = item.CellStyle.Has(GroupCellStyle.CheckMark);
 	            if (isRowClick)

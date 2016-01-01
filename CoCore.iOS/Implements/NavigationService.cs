@@ -153,12 +153,11 @@ namespace CoCore.iOS
 					result = SendToResult (vcBack, intent);
 					navVc.PopViewController (UseAnimated);
 					return result;
-				} else if (navVc.PresentingViewController != null) {
-					result = SendToResult (navVc.PresentingViewController, intent);
-					navVc.DismissViewController (UseAnimated, null);
-					return result;
 				}
-				return false;
+			    if (navVc.PresentingViewController == null) return false;
+			    result = SendToResult (navVc.PresentingViewController, intent);
+			    navVc.DismissViewController (UseAnimated, null);
+			    return result;
 			}
 			var vc = BackViewControllerWithRootViewController (topVc.PresentingViewController);
 			topVc.DismissViewController (UseAnimated, null);
@@ -167,26 +166,30 @@ namespace CoCore.iOS
 
 
 
-		public bool GoBack ()
-		{
-			var topVc = TopViewController;
-			if (topVc == null)
-				return false;
-			var navVc = topVc.NavigationController;
-			if (navVc != null) {
-				if (navVc.PresentingViewController != null) {
-					navVc.DismissViewController (UseAnimated, null);
-					return true;
-				}
-				return navVc.PopViewController (UseAnimated) != null;
-			}
-			topVc.DismissViewController (UseAnimated, null);
-			return true;
-		}
-			
+	    public bool GoBack()
+	    {
+	        var topVc = TopViewController;
+	        if (topVc == null)
+	            return false;
+	        var navVc = topVc.NavigationController;
+	        if (navVc != null)
+	        {
+	            var vControllers = navVc.ViewControllers;
+	            if (vControllers.Length > 1)
+	            {
+	                return navVc.PopViewController(UseAnimated) != null;
+	            }
+	            if (navVc.PresentingViewController == null) return false;
+	            navVc.DismissViewController(UseAnimated, null);
+	            return true;
+	        }
+	        topVc.DismissViewController(UseAnimated, null);
+	        return true;
+	    }
 
 
-		#region Get View Controller
+
+	    #region Get View Controller
 
 		internal UIViewController TopViewController {
 			get {
