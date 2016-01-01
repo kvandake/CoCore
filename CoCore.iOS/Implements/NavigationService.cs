@@ -24,7 +24,7 @@ namespace CoCore.iOS
 		string _toPresent = ToPresent;
 		string _toPush = ToPush;
 
-		public IDictionary<string, Tuple<MethodInfo, object>> Converts {
+		protected IDictionary<string, Tuple<MethodInfo, object>> Converts {
 			get {
 				return _converts ?? (_converts = new Dictionary<string, Tuple<MethodInfo, object>> ());
 			}
@@ -238,18 +238,17 @@ namespace CoCore.iOS
 		}
 
 
-		static object Create (Type type, Intent intent)
-		{
-			var view = Extension.CreateForType (type, intent == null ? null : intent.Values);
-			//var mvvmView = view as IContext;
-			//if (mvvmView != null) {
-			//	if (!intent.RemoveToNavigate) {
-			//		mvvmView.Context = intent;
-			//	}
-			//	return mvvmView;
-			//}
-			return view;
-		}
+	    private static object Create(Type type, Intent intent)
+	    {
+	        var view = Extension.CreateForType(type, intent == null ? null : intent.Values);
+	        var mvvmView = view as IContext;
+	        if (mvvmView == null) return view;
+	        if (intent != null && !intent.RemoveToNavigate)
+	        {
+	            mvvmView.Context = intent;
+	        }
+	        return mvvmView;
+	    }
 
 	}
 }
