@@ -52,7 +52,7 @@
   </ItemGroup>
   <ItemGroup>
     <Reference Include="CoCore.Base, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\CoCore.Base.1.0.1\lib\portable-net45+win+wp80+MonoAndroid10+xamarinios10+MonoTouch10\CoCore.Base.dll</HintPath>
+      <HintPath>..\packages\CoCore.Base.1.0.3\lib\portable-net45+win+wpa81+wp80+MonoAndroid10+xamarinios10+MonoTouch10\CoCore.Base.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="CoCore.Binding, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
