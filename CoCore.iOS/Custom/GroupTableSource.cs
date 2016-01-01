@@ -4,6 +4,7 @@ using Foundation;
 using System.Collections.Specialized;
 using System.Threading;
 using CoCore.Base;
+using System.Runtime.InteropServices;
 
 namespace CoCore.iOS
 {
@@ -18,7 +19,11 @@ namespace CoCore.iOS
 
         public GroupCell SelectedItem { get; private set; }
 
-	    public UITableView TableView => _tableView;
+	    public UITableView TableView {
+			get {
+				return _tableView;
+			}
+		}
 
 	    public UITableViewRowAnimation AddSectionAnimation
 		{
@@ -231,6 +236,10 @@ namespace CoCore.iOS
 					for (var i = 0; i < countAdd; i++)
 					{
 						_tableView.BeginUpdates();
+						var addSection = e.NewItems[i] as GroupSection;
+						if(addSection!=null){
+							addSection.CollectionChanged+=HandleCellCollectionChanged;
+						}
 						var section = NSIndexSet.FromIndex(e.NewStartingIndex + i);
 						_tableView.InsertSections (section,AddSectionAnimation);
 						_tableView.EndUpdates();
@@ -240,6 +249,10 @@ namespace CoCore.iOS
 					var countRemove = e.OldItems.Count;
 					for (var i = 0; i < countRemove; i++)
 					{
+						var removeSection = e.OldItems[i] as GroupSection;
+						if(removeSection!=null){
+							removeSection.CollectionChanged-=HandleCellCollectionChanged;
+						}
 						_tableView.BeginUpdates();
 						var section = NSIndexSet.FromIndex(e.OldStartingIndex + i);
 						_tableView.DeleteSections (section,DeleteSectionAnimation);
