@@ -155,7 +155,8 @@ namespace CoCore.iOS
 					return result;
 				}
 			    if (navVc.PresentingViewController == null) return false;
-			    result = SendToResult (navVc.PresentingViewController, intent);
+				var navVcFoPresenting = navVc.PresentingViewController as UINavigationController;
+				result = SendToResult (navVcFoPresenting == null ? navVc.PresentingViewController : navVcFoPresenting.TopViewController, intent);
 			    navVc.DismissViewController (UseAnimated, null);
 			    return result;
 			}
