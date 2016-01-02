@@ -14,6 +14,7 @@ namespace CoCore.iOS
 		INotifyCollectionChanged _notifier;
 		readonly UITableView _tableView;
 		T _selectedItem;
+		bool deselectRowAfterSelect = true;
 
 		public T SelectedItem {
 			get {
@@ -21,7 +22,23 @@ namespace CoCore.iOS
 			}
 		}
 
-		public event EventHandler SelectionChanged;
+		public UITableView TableView {
+			get {
+				return _tableView;
+			}
+		}
+
+		public event EventHandler<ObservableEventArgs<T>> SelectionChanged;
+
+
+		public bool DeselectRowAfterSelect {
+			get {
+				return deselectRowAfterSelect;
+			}
+			set {
+				deselectRowAfterSelect = value;
+			}
+		}
 
 		/// <summary>
 		/// When set, specifies which animation should be used when rows change.
@@ -143,7 +160,11 @@ namespace CoCore.iOS
 			_selectedItem = _dataSource != null ? _dataSource [indexPath.Row] : default(T);
 			var handler = SelectionChanged;
 			if (handler != null) {
-				handler (this, EventArgs.Empty);
+				handler (this, new ObservableEventArgs<T> (indexPath, _selectedItem));
+
+			}
+			if (DeselectRowAfterSelect) {
+				tableView.DeselectRow (indexPath, true);
 			}
 		}
 
@@ -248,6 +269,32 @@ namespace CoCore.iOS
 			{
 				NSOperationQueue.MainQueue.AddOperation(act);
 				NSOperationQueue.MainQueue.WaitUntilAllOperationsAreFinished();
+			}
+		}
+
+
+		public class ObservableEventArgs<T> : EventArgs{
+
+			readonly T _item;
+
+			public T Item {
+				get {
+					return _item;
+				}
+			}
+
+			readonly NSIndexPath _index;
+
+			public NSIndexPath Index {
+				get {
+					return _index;
+				}
+			}
+
+			public ObservableEventArgs(NSIndexPath index, T item){
+				_index = index;
+				_item = item; 
+
 			}
 		}
 	}
