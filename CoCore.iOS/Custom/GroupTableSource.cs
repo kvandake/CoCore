@@ -4,7 +4,6 @@ using Foundation;
 using System.Collections.Specialized;
 using System.Threading;
 using CoCore.Base;
-using System.Runtime.InteropServices;
 
 namespace CoCore.iOS
 {
@@ -18,6 +17,8 @@ namespace CoCore.iOS
 	    public event EventHandler<NSIndexPath> SelectionChanged;
 
         public GroupCell SelectedItem { get; private set; }
+
+		public bool UseAnimations { get; set;}
 
 	    public UITableView TableView {
 			get {
@@ -57,7 +58,7 @@ namespace CoCore.iOS
             set;
         }
 
-        public UITableViewRowAnimation ReloadCellAnimation
+        public UITableViewRowAnimation ReplaceCellAnimation
         {
             get;
             set;
@@ -94,11 +95,12 @@ namespace CoCore.iOS
 		{
 			_tableView = tableView;
 			_mainThread = Thread.CurrentThread;
+			UseAnimations = true;
 			AddCellAnimation = UITableViewRowAnimation.Automatic;
 			DeleteCellAnimation = UITableViewRowAnimation.Automatic;
 			AddSectionAnimation = UITableViewRowAnimation.Automatic;
 			DeleteSectionAnimation = UITableViewRowAnimation.Automatic;
-            ReloadCellAnimation = UITableViewRowAnimation.Automatic;
+            ReplaceCellAnimation = UITableViewRowAnimation.Automatic;
             ReloadSectionAnimation = UITableViewRowAnimation.Automatic;
         }
 
@@ -232,138 +234,169 @@ namespace CoCore.iOS
 
 		#region Action
 
+
+		#region Section Change
+
 		void HandleSectionCollectionChanged(object sender, NotifyCollectionChangedEventArgs e){
-			Action act = () =>
-			{
-				switch (e.Action) {
-				case NotifyCollectionChangedAction.Add:
-					var countAdd = e.NewItems.Count;
-					for (var i = 0; i < countAdd; i++)
-					{
-						_tableView.BeginUpdates();
-						var addSection = e.NewItems[i] as GroupSection;
-						if(addSection!=null){
-							addSection.CollectionChanged+=HandleCellCollectionChanged;
-						}
-						var section = NSIndexSet.FromIndex(e.NewStartingIndex + i);
-						_tableView.InsertSections (section,AddSectionAnimation);
-						_tableView.EndUpdates();
-					}
-					break;
-				case NotifyCollectionChangedAction.Remove:
-					var countRemove = e.OldItems.Count;
-					for (var i = 0; i < countRemove; i++)
-					{
-						var removeSection = e.OldItems[i] as GroupSection;
-						if(removeSection!=null){
-							removeSection.CollectionChanged-=HandleCellCollectionChanged;
-						}
-						_tableView.BeginUpdates();
-						var section = NSIndexSet.FromIndex(e.OldStartingIndex + i);
-						_tableView.DeleteSections (section,DeleteSectionAnimation);
-						_tableView.EndUpdates();
-					}
-					break;
-				case NotifyCollectionChangedAction.Replace:
-					if (e.NewItems.Count != e.OldItems.Count)
-						return;
-					_tableView.ReloadSectionIndexTitles ();
-					var sectionReplace = NSIndexSet.FromIndex(e.NewStartingIndex);
-					_tableView.ReloadSections(sectionReplace, ReloadSectionAnimation);
-					break;
-				case NotifyCollectionChangedAction.Reset:
-					_tableView.ReloadData();
-					break;
-				case NotifyCollectionChangedAction.Move:
-					if (e.NewItems.Count != 1 && e.OldItems.Count != 1)
-						return;
-					_tableView.BeginUpdates();
-					_tableView.MoveSection (e.OldStartingIndex,e.NewStartingIndex);
-					_tableView.EndUpdates();
-					break;
-				default:
-					throw new ArgumentOutOfRangeException ();
-				}
-			};
 			var isMainThread = Thread.CurrentThread == _mainThread;
-			if (isMainThread)
-			{
-				act();
-			}
-			else
-			{
-				NSOperationQueue.MainQueue.AddOperation(act);
-				NSOperationQueue.MainQueue.WaitUntilAllOperationsAreFinished();
+			if (isMainThread) {
+				SectionCollectionChangedCheck (e);
+			} else {
+				_tableView.InvokeOnMainThread (() => SectionCollectionChangedCheck (e));
 			}
 		}
 
+		protected virtual void SectionCollectionChangedCheck(NotifyCollectionChangedEventArgs args){
+			if (!UseAnimations) {
+				ReloadTableData ();
+				return;
+			}
+			if (SectionTryDoAnimatedChange (args)) {
+				return;
+			}
+			ReloadTableData ();
+		}
+
+
+		protected bool SectionTryDoAnimatedChange(NotifyCollectionChangedEventArgs e){
+			switch (e.Action) {
+			case NotifyCollectionChangedAction.Add:
+				var countAdd = e.NewItems.Count;
+				for (var i = 0; i < countAdd; i++) {
+					_tableView.BeginUpdates ();
+					var addSection = e.NewItems [i] as GroupSection;
+					if (addSection != null) {
+						addSection.CollectionChanged += HandleCellCollectionChanged;
+					}
+					var section = NSIndexSet.FromIndex (e.NewStartingIndex + i);
+					_tableView.InsertSections (section, AddSectionAnimation);
+					_tableView.EndUpdates ();
+				}
+				return true;
+			case NotifyCollectionChangedAction.Remove:
+				var countRemove = e.OldItems.Count;
+				for (var i = 0; i < countRemove; i++) {
+					var removeSection = e.OldItems [i] as GroupSection;
+					if (removeSection != null) {
+						removeSection.CollectionChanged -= HandleCellCollectionChanged;
+					}
+					_tableView.BeginUpdates ();
+					var section = NSIndexSet.FromIndex (e.OldStartingIndex + i);
+					_tableView.DeleteSections (section, DeleteSectionAnimation);
+					_tableView.EndUpdates ();
+				}
+				return true;
+			case NotifyCollectionChangedAction.Replace:
+				if (e.NewItems.Count != e.OldItems.Count)
+					return false;
+				_tableView.ReloadSectionIndexTitles ();
+				var sectionReplace = NSIndexSet.FromIndex (e.NewStartingIndex);
+				_tableView.ReloadSections (sectionReplace, ReloadSectionAnimation);
+				return true;
+			case NotifyCollectionChangedAction.Reset:
+				ReloadTableData ();
+				return true;
+			case NotifyCollectionChangedAction.Move:
+				if (e.NewItems.Count != 1 && e.OldItems.Count != 1)
+					return false;
+				if (e.NewStartingIndex == e.OldStartingIndex)
+					return true;
+				_tableView.BeginUpdates ();
+				_tableView.MoveSection (e.OldStartingIndex, e.NewStartingIndex);
+				_tableView.EndUpdates ();
+				return true;
+			default:
+				return false;
+			}
+		}
+
+		#endregion
+
+		#region Cell Change
+
 		void HandleCellCollectionChanged(object sender, NotifyCollectionChangedEventArgs e){
+			var isMainThread = Thread.CurrentThread == _mainThread;
+			if (isMainThread) {
+				CellCollectionChangedCheck (sender,e);
+			} else {
+				_tableView.InvokeOnMainThread (() => CellCollectionChangedCheck (sender, e));
+			}
+		}
+
+		/// <summary>
+		/// Collections the changed on collection changed.
+		/// </summary>
+		/// <param name="sender">Sender.</param>
+		/// <param name="args">Arguments.</param>
+		protected virtual void CellCollectionChangedCheck(object sender, NotifyCollectionChangedEventArgs args){
+			if (!UseAnimations) {
+				ReloadTableData ();
+				return;
+			}
+			if (CellTryDoAnimatedChange (sender, args)) {
+				return;
+			}
+			ReloadTableData ();
+		}
+
+		protected bool CellTryDoAnimatedChange(object sender, NotifyCollectionChangedEventArgs e){
 			var section = sender as GroupSection;
 			if (section == null)
-				return;
+				return false;
 			var indexSection = DataSource.IndexOf (section);
-			Action act = () =>
-			{
-				switch (e.Action) {
-				case NotifyCollectionChangedAction.Add:
-					var countAdd = e.NewItems.Count;
-					var pathsAdd = new NSIndexPath[countAdd];
-					for (var i = 0; i < countAdd; i++)
-					{
-						pathsAdd[i] = NSIndexPath.FromRowSection(e.NewStartingIndex + i, indexSection);
-					}
-					_tableView.BeginUpdates();
-					_tableView.InsertRows(pathsAdd, AddCellAnimation);
-					_tableView.EndUpdates();
-					break;
-				case NotifyCollectionChangedAction.Remove:
-					var countRemove = e.OldItems.Count;
-					var pathsRemove = new NSIndexPath[countRemove];
-					for (var i = 0; i < countRemove; i++)
-					{
-						pathsRemove[i] = NSIndexPath.FromRowSection(e.OldStartingIndex + i, indexSection);
-					}
-					_tableView.BeginUpdates();
-					_tableView.DeleteRows(pathsRemove, DeleteCellAnimation);
-					_tableView.EndUpdates();
-					break;
-				case NotifyCollectionChangedAction.Replace:
-					if (e.NewItems.Count != e.OldItems.Count)
-						return;
-					var indexPath = NSIndexPath.FromRowSection(e.NewStartingIndex, indexSection);
-					_tableView.ReloadRows(new[]
-						{
-							indexPath
-						}, ReloadCellAnimation);
-					break;
-				case NotifyCollectionChangedAction.Move:
-					if (e.NewItems.Count != 1 && e.OldItems.Count != 1)
-						return;
-					var newPath = NSIndexPath.FromRowSection(e.NewStartingIndex, indexSection);
-					var oldPath = NSIndexPath.FromRowSection(e.OldStartingIndex , indexSection);
-					_tableView.BeginUpdates();
-					_tableView.MoveRow(oldPath,newPath);
-					_tableView.EndUpdates();
-					break;
-				case NotifyCollectionChangedAction.Reset:
-					_tableView.ReloadData();
-					break;
-				default:
-					throw new ArgumentOutOfRangeException ();
+			switch (e.Action) {
+			case NotifyCollectionChangedAction.Add:
+				var countAdd = e.NewItems.Count;
+				var pathsAdd = new NSIndexPath[countAdd];
+				for (var i = 0; i < countAdd; i++) {
+					pathsAdd [i] = NSIndexPath.FromRowSection (e.NewStartingIndex + i, indexSection);
 				}
-			};
-
-			var isMainThread = Thread.CurrentThread == _mainThread;
-
-			if (isMainThread)
-			{
-				act();
+				_tableView.BeginUpdates ();
+				_tableView.InsertRows (pathsAdd, AddCellAnimation);
+				_tableView.EndUpdates ();
+				return true;
+			case NotifyCollectionChangedAction.Remove:
+				var countRemove = e.OldItems.Count;
+				var pathsRemove = new NSIndexPath[countRemove];
+				for (var i = 0; i < countRemove; i++) {
+					pathsRemove [i] = NSIndexPath.FromRowSection (e.OldStartingIndex + i, indexSection);
+				}
+				_tableView.BeginUpdates ();
+				_tableView.DeleteRows (pathsRemove, DeleteCellAnimation);
+				_tableView.EndUpdates ();
+				return true;
+			case NotifyCollectionChangedAction.Replace:
+				if (e.NewItems.Count != e.OldItems.Count)
+					return false;
+				var indexPath = NSIndexPath.FromRowSection (e.NewStartingIndex, indexSection);
+				_tableView.ReloadRows (new[] {
+					indexPath
+				}, ReplaceCellAnimation);
+				return true;
+			case NotifyCollectionChangedAction.Move:
+				if (e.NewItems.Count != 1 && e.OldItems.Count != 1)
+					return false;
+				if (e.NewStartingIndex == e.OldStartingIndex)
+					return true;
+				var newPath = NSIndexPath.FromRowSection (e.NewStartingIndex, indexSection);
+				var oldPath = NSIndexPath.FromRowSection (e.OldStartingIndex, indexSection);
+				_tableView.BeginUpdates ();
+				_tableView.MoveRow (oldPath, newPath);
+				_tableView.EndUpdates ();
+				return true;
+			case NotifyCollectionChangedAction.Reset:
+				ReloadTableData ();
+				return true;
+			default:
+				return false;
 			}
-			else
-			{
-				NSOperationQueue.MainQueue.AddOperation(act);
-				NSOperationQueue.MainQueue.WaitUntilAllOperationsAreFinished();
-			}
+		}
+
+
+		#endregion
+
+		void ReloadTableData(){
+			_tableView.ReloadData ();
 		}
 
 		#endregion
