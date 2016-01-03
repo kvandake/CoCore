@@ -222,17 +222,21 @@ namespace CoCore.iOS
 			var item = _dataSource [indexPath.Section] [indexPath.Row];
 			var isCustom = item.CellStyle.Has (GroupCellStyle.Custom);
 			if (isCustom) {
-				if (_dataSource == null)
-					return 0;
-				var height = _dataSource [indexPath.Section] [indexPath.Row].Height;
+				var height = item.Height;
 				return Math.Abs (height) <= 0 ? tableView.RowHeight : height;
-			} else {
-				return tableView.RowHeight;
 			}
+		    return tableView.RowHeight;
 		}
 
 
-		#region Action
+	    public override nfloat GetHeightForHeader(UITableView tableView, nint section)
+	    {
+	        var item = _dataSource[(int) section];
+	        var height = item.Height;
+	        return Math.Abs(height) <= 0 ? tableView.SectionHeaderHeight : height;
+	    }
+
+	    #region Action
 
 
 		#region Section Change

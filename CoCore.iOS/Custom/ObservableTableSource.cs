@@ -14,9 +14,8 @@ namespace CoCore.iOS
 		INotifyCollectionChanged _notifier;
 		readonly UITableView _tableView;
 		T _selectedItem;
-		bool deselectRowAfterSelect = true;
 
-		public T SelectedItem {
+	    public T SelectedItem {
 			get {
 				return _selectedItem;
 			}
@@ -33,16 +32,9 @@ namespace CoCore.iOS
 
 		public bool UseAnimations { get; set;}
 
-		public bool DeselectRowAfterSelect {
-			get {
-				return deselectRowAfterSelect;
-			}
-			set {
-				deselectRowAfterSelect = value;
-			}
-		}
+		public bool DeselectRowAfterSelect { get; set; }
 
-		/// <summary>
+	    /// <summary>
 		/// When set, specifies which animation should be used when rows change.
 		/// </summary>
 		public UITableViewRowAnimation AddAnimation
@@ -156,6 +148,8 @@ namespace CoCore.iOS
 			DeleteAnimation = UITableViewRowAnimation.Automatic;
 			ReplaceAnimation = UITableViewRowAnimation.Automatic;
 			UseAnimations = true;
+		    DeselectRowAfterSelect = true;
+
 		}
 
 		public override nint NumberOfSections (UITableView tableView)
