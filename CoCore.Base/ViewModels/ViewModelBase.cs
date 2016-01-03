@@ -7,7 +7,9 @@ namespace CoCore.Base
 	public abstract class ViewModelBase : INotifyPropertyChanged, IDisposable
 	{
 
-		IBroadcast _broadcast;
+	    public string Title { get; set; }
+
+	    IBroadcast _broadcast;
 
 		#region INotifyPropertyChanged implementation
 

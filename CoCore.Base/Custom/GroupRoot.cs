@@ -1,24 +1,15 @@
-﻿using System.Collections.ObjectModel;
-using System.Collections.Specialized;
+﻿using System.Collections.Generic;
 
 namespace CoCore.Base
 {
-	public class GroupRoot : ObservableCollection<GroupSection>
+	public class GroupRoot : ExtendedObservableCollection<GroupSection>
 	{
-
-	    public void UpdateSection(GroupSection section)
+	    public GroupRoot()
 	    {
-	        var index = IndexOf(section);
-	        OnCollectionChanged(new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Replace,
-	            new[] {section}, new[] {section}, index));
 	    }
 
-
-	    public void UpdateSection(int index)
+	    public GroupRoot(IEnumerable<GroupSection> items) : base(items)
 	    {
-	        var section = this[index];
-	        OnCollectionChanged(new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Replace,
-	            new[] {section}, new[] {section}, index));
 	    }
 	}
 }

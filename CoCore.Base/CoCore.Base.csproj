@@ -43,8 +43,11 @@
     <Compile Include="Custom\GroupRoot.cs" />
     <Compile Include="Custom\GroupSection.cs" />
     <Compile Include="Ext\Extension.cs" />
+    <Compile Include="Ext\ListExtensions.cs" />
     <Compile Include="Implements\BasicBroadcast.cs" />
+    <Compile Include="Implements\ComparisonComparer.cs" />
     <Compile Include="Implements\Device.cs" />
+    <Compile Include="Implements\ExtendedObservableCollection.cs" />
     <Compile Include="Interface\IBroadcast.cs" />
     <Compile Include="Interface\IContext.cs" />
     <Compile Include="Interface\IIocContainer.cs" />
