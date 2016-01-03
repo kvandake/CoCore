@@ -28,8 +28,10 @@ namespace CoCore.iOS
 			}
 		}
 
-		public event EventHandler<ObservableEventArgs<T>> SelectionChanged;
+		public event EventHandler<ObservableEventArgs> SelectionChanged;
 
+
+		public bool UseAnimations { get; set;}
 
 		public bool DeselectRowAfterSelect {
 			get {
@@ -53,6 +55,15 @@ namespace CoCore.iOS
 		/// When set, specifieds which animation should be used when a row is deleted.
 		/// </summary>
 		public UITableViewRowAnimation DeleteAnimation
+		{
+			get;
+			set;
+		}
+
+		/// <summary>
+		/// When set, specifieds which animation should be used when a row is replaced.
+		/// </summary>
+		public UITableViewRowAnimation ReplaceAnimation
 		{
 			get;
 			set;
@@ -143,6 +154,8 @@ namespace CoCore.iOS
 			_mainThread = Thread.CurrentThread;
 			AddAnimation = UITableViewRowAnimation.Automatic;
 			DeleteAnimation = UITableViewRowAnimation.Automatic;
+			ReplaceAnimation = UITableViewRowAnimation.Automatic;
+			UseAnimations = true;
 		}
 
 		public override nint NumberOfSections (UITableView tableView)
@@ -160,7 +173,7 @@ namespace CoCore.iOS
 			_selectedItem = _dataSource != null ? _dataSource [indexPath.Row] : default(T);
 			var handler = SelectionChanged;
 			if (handler != null) {
-				handler (this, new ObservableEventArgs<T> (indexPath, _selectedItem));
+				handler (this, new ObservableEventArgs (indexPath, _selectedItem));
 
 			}
 			if (DeselectRowAfterSelect) {
@@ -206,74 +219,100 @@ namespace CoCore.iOS
 		}
 
 
+		protected static NSIndexPath[] CreateNSIndexPathArray(int startingPosition, int count)
+		{
+			var newIndexPaths = new NSIndexPath[count];
+			for (var i = 0; i < count; i++)
+			{
+				newIndexPaths[i] = NSIndexPath.FromRowSection(i + startingPosition, 0);
+			}
+			return newIndexPaths;
+		}
+
+
+
+
+
+
+		/// <summary>
+		/// Collections the changed on collection changed.
+		/// </summary>
+		/// <param name="args">Arguments.</param>
+		protected virtual void CollectionChangedCheck(NotifyCollectionChangedEventArgs args){
+			if (!UseAnimations) {
+				ReloadTableData ();
+				return;
+			}
+			if (TryDoAnimatedChange (args)) {
+				return;
+			}
+			ReloadTableData ();
+		}
+
+
+		/// <summary>
+		/// Do animated change.
+		/// </summary>
+		/// <returns><c>true</c>, if do animated change was tryed, <c>false</c> otherwise.</returns>
+		/// <param name="e">E.</param>
+		protected bool TryDoAnimatedChange(NotifyCollectionChangedEventArgs e){
+			switch (e.Action) {
+			case NotifyCollectionChangedAction.Add:
+				var newIndexPaths = CreateNSIndexPathArray (e.NewStartingIndex, e.NewItems.Count);
+				_tableView.BeginUpdates ();
+				_tableView.InsertRows (newIndexPaths, AddAnimation);
+				_tableView.EndUpdates ();
+				return true;
+			case NotifyCollectionChangedAction.Remove:
+				var oldIndexPaths = CreateNSIndexPathArray (e.OldStartingIndex, e.OldItems.Count);
+				_tableView.BeginUpdates ();
+				_tableView.DeleteRows (oldIndexPaths, DeleteAnimation);
+				_tableView.EndUpdates ();
+				return true;
+			case NotifyCollectionChangedAction.Replace:
+				if (e.NewItems.Count != e.OldItems.Count)
+					return false;
+				var indexPath = NSIndexPath.FromRowSection (e.NewStartingIndex, 0);
+				_tableView.ReloadRows (new[] {
+					indexPath
+				}, ReplaceAnimation);
+				return true;
+			case NotifyCollectionChangedAction.Move:
+				if (e.NewItems.Count != 1 && e.OldItems.Count != 1)
+					return false;
+				if (e.NewStartingIndex == e.OldStartingIndex)
+					return true;
+				var newPath = NSIndexPath.FromRowSection (e.NewStartingIndex, 0);
+				var oldPath = NSIndexPath.FromRowSection (e.OldStartingIndex, 0);
+				_tableView.BeginUpdates ();
+				_tableView.MoveRow (oldPath, newPath);
+				_tableView.EndUpdates ();
+				return true;
+			case NotifyCollectionChangedAction.Reset:
+				_tableView.ReloadData ();
+				return true;
+			default:
+				return false;
+			}
+		}
+
+		void ReloadTableData(){
+			_tableView.ReloadData ();
+		}
+
+
 		void HandleCollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
 		{
-			Action act = () =>
-			{
-				switch (e.Action) {
-				case NotifyCollectionChangedAction.Add:
-					var countAdd = e.NewItems.Count;
-					var pathsAdd = new NSIndexPath[countAdd];
-					for (var i = 0; i < countAdd; i++)
-					{
-						pathsAdd[i] = NSIndexPath.FromRowSection(e.NewStartingIndex + i, 0);
-					}
-					_tableView.BeginUpdates();
-					_tableView.InsertRows(pathsAdd, AddAnimation);
-					_tableView.EndUpdates();
-					break;
-				case NotifyCollectionChangedAction.Remove:
-					var countRemove = e.OldItems.Count;
-					var pathsRemove = new NSIndexPath[countRemove];
-					for (var i = 0; i < countRemove; i++)
-					{
-						pathsRemove[i] = NSIndexPath.FromRowSection(e.OldStartingIndex + i, 0);
-					}
-					_tableView.BeginUpdates();
-					_tableView.DeleteRows(pathsRemove, DeleteAnimation);
-					_tableView.EndUpdates();
-					break;
-				case NotifyCollectionChangedAction.Replace:
-					if (e.NewItems.Count != e.OldItems.Count)
-						return;
-					var indexPath = NSIndexPath.FromRowSection(e.NewStartingIndex, 0);
-					_tableView.ReloadRows(new[]
-						{
-							indexPath
-						}, UITableViewRowAnimation.Fade);
-					break;
-				case NotifyCollectionChangedAction.Move:
-					if (e.NewItems.Count != 1 && e.OldItems.Count != 1)
-						return;
-					var newPath = NSIndexPath.FromRowSection(e.NewStartingIndex, 0);
-					var oldPath = NSIndexPath.FromRowSection(e.OldStartingIndex , 0);
-					_tableView.BeginUpdates();
-					_tableView.MoveRow(oldPath,newPath);
-					_tableView.EndUpdates();
-					break;
-				case NotifyCollectionChangedAction.Reset:
-					_tableView.ReloadData();
-					break;
-				default:
-					throw new ArgumentOutOfRangeException ();
-				}
-			};
-
 			var isMainThread = Thread.CurrentThread == _mainThread;
-
-			if (isMainThread)
-			{
-				act();
-			}
-			else
-			{
-				NSOperationQueue.MainQueue.AddOperation(act);
-				NSOperationQueue.MainQueue.WaitUntilAllOperationsAreFinished();
+			if (isMainThread) {
+				CollectionChangedCheck (e);
+			} else {
+				_tableView.InvokeOnMainThread (() => CollectionChangedCheck (e));
 			}
 		}
 
 
-		public class ObservableEventArgs<T> : EventArgs{
+		public class ObservableEventArgs : EventArgs{
 
 			readonly T _item;
 
