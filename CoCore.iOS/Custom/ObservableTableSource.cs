@@ -89,6 +89,12 @@ namespace CoCore.iOS
 		public Func<UITableView, nint, nfloat> GetHeightForHeaderDelegate{get;set;}
 
 		/// <summary>
+		/// When set, returns the height of rows.
+		/// </summary>
+		/// <seealso cref="GetViewForHeaderDelegate"/>
+		public Func<UITableView, NSIndexPath, nfloat> GetHeightForRowDelegate {get;set;}
+
+		/// <summary>
 		/// When set, returns a view that can be used as the TableView's footer.
 		/// </summary>
 		/// <seealso cref="GetHeightForFooterDelegate"/>
@@ -194,6 +200,11 @@ namespace CoCore.iOS
 			return GetViewForFooterDelegate != null 
 				? GetViewForFooterDelegate (tableView, section) 
 					: base.GetViewForFooter (tableView, section);
+		}
+
+		public override nfloat GetHeightForRow (UITableView tableView, NSIndexPath indexPath)
+		{
+			return GetHeightForRowDelegate != null ? GetHeightForRowDelegate (tableView, indexPath) : tableView.RowHeight;
 		}
 
 
