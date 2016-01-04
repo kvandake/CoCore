@@ -4,6 +4,7 @@ using Foundation;
 using System.Collections.Specialized;
 using System.Threading;
 using CoCore.Base;
+using CoreGraphics;
 
 namespace CoCore.iOS
 {
@@ -13,6 +14,32 @@ namespace CoCore.iOS
 		GroupRoot _dataSource;
 		readonly UITableView _tableView;
 
+
+		#region Init Events
+
+		public event EventHandler OnDraggingStarted;
+
+		public event EventHandler OnDraggingEnded;
+
+		public event EventHandler OnWillEndDragging;
+
+		public event EventHandler OnScrolled;
+
+		public event EventHandler OnScrolledToTop;
+
+		public event EventHandler OnScrollAnimationEnded;
+
+		public event EventHandler OnZoomingStarted;
+
+		public event EventHandler OnZoomingEnded;
+
+		public event EventHandler OnDidZoom;
+
+		public event EventHandler OnDecelerationStarted;
+
+		public event EventHandler OnDecelerationEnded;
+
+		#endregion
 
 	    public event EventHandler<NSIndexPath> SelectionChanged;
 
@@ -405,10 +432,158 @@ namespace CoCore.iOS
 
 		#endregion
 
-	    protected virtual void OnSelectionChanged(NSIndexPath e)
-	    {
-	        SelectionChanged?.Invoke(this, e);
-	    }
+
+
+
+		#region Implements events
+
+		public override void DraggingEnded (UIScrollView scrollView, bool willDecelerate)
+		{
+			RaiseDraggingEnded (EventArgs.Empty);
+		}
+
+		public override void DraggingStarted (UIScrollView scrollView)
+		{
+			RaiseDraggingStarted (EventArgs.Empty);
+		}
+
+		public override void WillEndDragging (UIScrollView scrollView, CGPoint velocity, ref CGPoint targetContentOffset)
+		{
+			RaiseWillEndDragging (EventArgs.Empty);
+		}
+
+		public override void Scrolled (UIScrollView scrollView)
+		{
+			RaiseScrolled (EventArgs.Empty);
+		}
+
+		public override void ScrolledToTop (UIScrollView scrollView)
+		{
+			RaiseScrolledToTop (EventArgs.Empty);
+		}
+
+		public override void ScrollAnimationEnded (UIScrollView scrollView)
+		{
+			RaiseScrollAnimationEnded (EventArgs.Empty);
+		}
+
+		public override void ZoomingStarted (UIScrollView scrollView, UIView view)
+		{
+			RaiseZoomingStarted (EventArgs.Empty);
+		}
+
+		public override void ZoomingEnded (UIScrollView scrollView, UIView withView, nfloat atScale)
+		{
+			RaiseZoomingEnded (EventArgs.Empty);
+		}
+
+		public override void DidZoom (UIScrollView scrollView)
+		{
+			RaiseDidZoom (EventArgs.Empty);
+		}
+
+		public override void DecelerationStarted (UIScrollView scrollView)
+		{
+			RaiseDecelerationStarted (EventArgs.Empty);
+		}
+
+		public override void DecelerationEnded (UIScrollView scrollView)
+		{
+			RaiseDecelerationEnded (EventArgs.Empty);
+		}
+
+		#endregion
+
+		#region Events
+
+		protected virtual void OnSelectionChanged(NSIndexPath e)
+		{
+			SelectionChanged?.Invoke(this, e);
+		}
+
+
+		protected virtual void RaiseDraggingStarted (EventArgs e)
+		{
+			var handler = OnDraggingStarted;
+			if (handler != null)
+				handler (this, e);
+		}
+
+
+		protected virtual void RaiseDraggingEnded (EventArgs e)
+		{
+			var handler = OnDraggingEnded;
+			if (handler != null)
+				handler (this, e);
+		}
+
+		protected virtual void RaiseWillEndDragging (EventArgs e)
+		{
+			var handler = OnWillEndDragging;
+			if (handler != null)
+				handler (this, e);
+		}
+
+		protected virtual void RaiseScrolled (EventArgs e)
+		{
+			var handler = OnScrolled;
+			if (handler != null)
+				handler (this, e);
+		}
+
+		protected virtual void RaiseScrolledToTop (EventArgs e)
+		{
+			var handler = OnScrolledToTop;
+			if (handler != null)
+				handler (this, e);
+		}
+
+
+		protected virtual void RaiseScrollAnimationEnded (EventArgs e)
+		{
+			var handler = OnScrollAnimationEnded;
+			if (handler != null)
+				handler (this, e);
+		}
+
+		protected virtual void RaiseZoomingStarted (EventArgs e)
+		{
+			var handler = OnZoomingStarted;
+			if (handler != null)
+				handler (this, e);
+		}
+
+
+
+		protected virtual void RaiseZoomingEnded (EventArgs e)
+		{
+			var handler = OnZoomingEnded;
+			if (handler != null)
+				handler (this, e);
+		}
+
+		protected virtual void RaiseDidZoom (EventArgs e)
+		{
+			var handler = OnDidZoom;
+			if (handler != null)
+				handler (this, e);
+		}
+
+		protected virtual void RaiseDecelerationStarted (EventArgs e)
+		{
+			var handler = OnDecelerationStarted;
+			if (handler != null)
+				handler (this, e);
+		}
+
+		protected virtual void RaiseDecelerationEnded (EventArgs e)
+		{
+			var handler = OnDecelerationEnded;
+			if (handler != null)
+				handler (this, e);
+		}
+		#endregion
+
 	}
 }
 

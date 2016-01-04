@@ -3,17 +3,42 @@ using UIKit;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using Foundation;
-using System.Threading;
+using CoreGraphics;
 
 namespace CoCore.iOS
 {
-	public class ObservableTableSource<T> : UITableViewSource
+	public class ObservableTableSource<T> : UITableViewSource, IObservableTableData<T>
 	{
 		IList<T> _dataSource;
-		Thread _mainThread;
+		readonly ObservableTableDataProvider<T> provider;
 		INotifyCollectionChanged _notifier;
-		readonly UITableView _tableView;
 		T _selectedItem;
+
+		#region Init Events
+
+		public event EventHandler OnDraggingStarted;
+
+		public event EventHandler OnDraggingEnded;
+
+		public event EventHandler OnWillEndDragging;
+
+		public event EventHandler OnScrolled;
+
+		public event EventHandler OnScrolledToTop;
+
+		public event EventHandler OnScrollAnimationEnded;
+
+		public event EventHandler OnZoomingStarted;
+
+		public event EventHandler OnZoomingEnded;
+
+		public event EventHandler OnDidZoom;
+
+		public event EventHandler OnDecelerationStarted;
+
+		public event EventHandler OnDecelerationEnded;
+
+		#endregion
 
 	    public T SelectedItem {
 			get {
@@ -23,11 +48,11 @@ namespace CoCore.iOS
 
 		public UITableView TableView {
 			get {
-				return _tableView;
+				return provider.TableView;
 			}
 		}
 
-		public event EventHandler<ObservableEventArgs> SelectionChanged;
+		public event EventHandler<ObservableEventArgs<T>> SelectionChanged;
 
 
 		public bool UseAnimations { get; set;}
@@ -37,75 +62,43 @@ namespace CoCore.iOS
 	    /// <summary>
 		/// When set, specifies which animation should be used when rows change.
 		/// </summary>
-		public UITableViewRowAnimation AddAnimation
-		{
-			get;
-			set;
-		}
+		public UITableViewRowAnimation AddAnimation{get;set;}
 
 		/// <summary>
 		/// When set, specifieds which animation should be used when a row is deleted.
 		/// </summary>
-		public UITableViewRowAnimation DeleteAnimation
-		{
-			get;
-			set;
-		}
+		public UITableViewRowAnimation DeleteAnimation{get;set;}
 
 		/// <summary>
 		/// When set, specifieds which animation should be used when a row is replaced.
 		/// </summary>
-		public UITableViewRowAnimation ReplaceAnimation
-		{
-			get;
-			set;
-		}
+		public UITableViewRowAnimation ReplaceAnimation{get;set;}
 
-		public Func<UITableView, NSIndexPath,T, UITableViewCell> BindCellDelegate
-		{
-			get;
-			set;
-		}
+		public Func<UITableView, NSIndexPath,T, UITableViewCell> BindCellDelegate{get;set;}
 
 		/// <summary>
 		/// When set, returns the height of the view that will be used for the TableView's footer.
 		/// </summary>
 		/// <seealso cref="GetViewForFooterDelegate"/>
-		public Func<UITableView, nint, nfloat> GetHeightForFooterDelegate
-		{
-			get;
-			set;
-		}
+		public Func<UITableView, nint, nfloat> GetHeightForFooterDelegate{get;set;}
 
 		/// <summary>
 		/// When set, returns the height of the view that will be used for the TableView's header.
 		/// </summary>
 		/// <seealso cref="GetViewForHeaderDelegate"/>
-		public Func<UITableView, nint, nfloat> GetHeightForHeaderDelegate
-		{
-			get;
-			set;
-		}
+		public Func<UITableView, nint, nfloat> GetHeightForHeaderDelegate{get;set;}
 
 		/// <summary>
 		/// When set, returns a view that can be used as the TableView's footer.
 		/// </summary>
 		/// <seealso cref="GetHeightForFooterDelegate"/>
-		public Func<UITableView, nint, UIView> GetViewForFooterDelegate
-		{
-			get;
-			set;
-		}
+		public Func<UITableView, nint, UIView> GetViewForFooterDelegate{get;set;}
 
 		/// <summary>
 		/// When set, returns a view that can be used as the TableView's header.
 		/// </summary>
 		/// <seealso cref="GetHeightForHeaderDelegate"/>
-		public Func<UITableView, nint, UIView> GetViewForHeaderDelegate
-		{
-			get;
-			set;
-		}
+		public Func<UITableView, nint, UIView> GetViewForHeaderDelegate{get;set;}
 
 
 		/// <summary>
@@ -122,28 +115,27 @@ namespace CoCore.iOS
 				}
 
 				if (_notifier != null) {
-					_notifier.CollectionChanged -= HandleCollectionChanged;
+					_notifier.CollectionChanged -= provider.HandleCollectionChanged;
 				}
 
 				_dataSource = value;
 				_notifier = value as INotifyCollectionChanged;
 
 				if (_notifier != null) {
-					_notifier.CollectionChanged += HandleCollectionChanged;
+					_notifier.CollectionChanged += provider.HandleCollectionChanged;
 				}
-				_tableView.ReloadData ();
+				provider.ReloadTableData ();
 			}
 		}
 
 
 		public ObservableTableSource(UITableView tableView){
-			_tableView = tableView;
+			provider = new ObservableTableDataProvider<T> (tableView, this);
 			Initialize ();
 		}
 
 		void Initialize()
 		{
-			_mainThread = Thread.CurrentThread;
 			AddAnimation = UITableViewRowAnimation.Automatic;
 			DeleteAnimation = UITableViewRowAnimation.Automatic;
 			ReplaceAnimation = UITableViewRowAnimation.Automatic;
@@ -167,7 +159,7 @@ namespace CoCore.iOS
 			_selectedItem = _dataSource != null ? _dataSource [indexPath.Row] : default(T);
 			var handler = SelectionChanged;
 			if (handler != null) {
-				handler (this, new ObservableEventArgs (indexPath, _selectedItem));
+				handler (this, new ObservableEventArgs<T> (indexPath, _selectedItem));
 
 			}
 			if (DeselectRowAfterSelect) {
@@ -213,123 +205,154 @@ namespace CoCore.iOS
 		}
 
 
-		protected static NSIndexPath[] CreateNSIndexPathArray(int startingPosition, int count)
+
+
+
+
+
+
+		#region Implements events
+
+		public override void DraggingEnded (UIScrollView scrollView, bool willDecelerate)
 		{
-			var newIndexPaths = new NSIndexPath[count];
-			for (var i = 0; i < count; i++)
-			{
-				newIndexPaths[i] = NSIndexPath.FromRowSection(i + startingPosition, 0);
-			}
-			return newIndexPaths;
+			RaiseDraggingEnded (EventArgs.Empty);
 		}
 
-
-
-
-
-
-		/// <summary>
-		/// Collections the changed on collection changed.
-		/// </summary>
-		/// <param name="args">Arguments.</param>
-		protected virtual void CollectionChangedCheck(NotifyCollectionChangedEventArgs args){
-			if (!UseAnimations) {
-				ReloadTableData ();
-				return;
-			}
-			if (TryDoAnimatedChange (args)) {
-				return;
-			}
-			ReloadTableData ();
-		}
-
-
-		/// <summary>
-		/// Do animated change.
-		/// </summary>
-		/// <returns><c>true</c>, if do animated change was tryed, <c>false</c> otherwise.</returns>
-		/// <param name="e">E.</param>
-		protected bool TryDoAnimatedChange(NotifyCollectionChangedEventArgs e){
-			switch (e.Action) {
-			case NotifyCollectionChangedAction.Add:
-				var newIndexPaths = CreateNSIndexPathArray (e.NewStartingIndex, e.NewItems.Count);
-				_tableView.BeginUpdates ();
-				_tableView.InsertRows (newIndexPaths, AddAnimation);
-				_tableView.EndUpdates ();
-				return true;
-			case NotifyCollectionChangedAction.Remove:
-				var oldIndexPaths = CreateNSIndexPathArray (e.OldStartingIndex, e.OldItems.Count);
-				_tableView.BeginUpdates ();
-				_tableView.DeleteRows (oldIndexPaths, DeleteAnimation);
-				_tableView.EndUpdates ();
-				return true;
-			case NotifyCollectionChangedAction.Replace:
-				if (e.NewItems.Count != e.OldItems.Count)
-					return false;
-				var indexPath = NSIndexPath.FromRowSection (e.NewStartingIndex, 0);
-				_tableView.ReloadRows (new[] {
-					indexPath
-				}, ReplaceAnimation);
-				return true;
-			case NotifyCollectionChangedAction.Move:
-				if (e.NewItems.Count != 1 && e.OldItems.Count != 1)
-					return false;
-				if (e.NewStartingIndex == e.OldStartingIndex)
-					return true;
-				var newPath = NSIndexPath.FromRowSection (e.NewStartingIndex, 0);
-				var oldPath = NSIndexPath.FromRowSection (e.OldStartingIndex, 0);
-				_tableView.BeginUpdates ();
-				_tableView.MoveRow (oldPath, newPath);
-				_tableView.EndUpdates ();
-				return true;
-			case NotifyCollectionChangedAction.Reset:
-				_tableView.ReloadData ();
-				return true;
-			default:
-				return false;
-			}
-		}
-
-		void ReloadTableData(){
-			_tableView.ReloadData ();
-		}
-
-
-		void HandleCollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
+		public override void DraggingStarted (UIScrollView scrollView)
 		{
-			var isMainThread = Thread.CurrentThread == _mainThread;
-			if (isMainThread) {
-				CollectionChangedCheck (e);
-			} else {
-				_tableView.InvokeOnMainThread (() => CollectionChangedCheck (e));
-			}
+			RaiseDraggingStarted (EventArgs.Empty);
+		}
+
+		public override void WillEndDragging (UIScrollView scrollView, CGPoint velocity, ref CGPoint targetContentOffset)
+		{
+			RaiseWillEndDragging (EventArgs.Empty);
+		}
+
+		public override void Scrolled (UIScrollView scrollView)
+		{
+			RaiseScrolled (EventArgs.Empty);
+		}
+
+		public override void ScrolledToTop (UIScrollView scrollView)
+		{
+			RaiseScrolledToTop (EventArgs.Empty);
+		}
+			
+		public override void ScrollAnimationEnded (UIScrollView scrollView)
+		{
+			RaiseScrollAnimationEnded (EventArgs.Empty);
+		}
+
+		public override void ZoomingStarted (UIScrollView scrollView, UIView view)
+		{
+			RaiseZoomingStarted (EventArgs.Empty);
+		}
+
+		public override void ZoomingEnded (UIScrollView scrollView, UIView withView, nfloat atScale)
+		{
+			RaiseZoomingEnded (EventArgs.Empty);
+		}
+
+		public override void DidZoom (UIScrollView scrollView)
+		{
+			RaiseDidZoom (EventArgs.Empty);
+		}
+
+		public override void DecelerationStarted (UIScrollView scrollView)
+		{
+			RaiseDecelerationStarted (EventArgs.Empty);
+		}
+
+		public override void DecelerationEnded (UIScrollView scrollView)
+		{
+			RaiseDecelerationEnded (EventArgs.Empty);
+		}
+
+		#endregion
+
+		#region Events
+
+		protected virtual void RaiseDraggingStarted (EventArgs e)
+		{
+			var handler = OnDraggingStarted;
+			if (handler != null)
+				handler (this, e);
 		}
 
 
-		public class ObservableEventArgs : EventArgs{
-
-			readonly T _item;
-
-			public T Item {
-				get {
-					return _item;
-				}
-			}
-
-			readonly NSIndexPath _index;
-
-			public NSIndexPath Index {
-				get {
-					return _index;
-				}
-			}
-
-			public ObservableEventArgs(NSIndexPath index, T item){
-				_index = index;
-				_item = item; 
-
-			}
+		protected virtual void RaiseDraggingEnded (EventArgs e)
+		{
+			var handler = OnDraggingEnded;
+			if (handler != null)
+				handler (this, e);
 		}
+
+		protected virtual void RaiseWillEndDragging (EventArgs e)
+		{
+			var handler = OnWillEndDragging;
+			if (handler != null)
+				handler (this, e);
+		}
+
+		protected virtual void RaiseScrolled (EventArgs e)
+		{
+			var handler = OnScrolled;
+			if (handler != null)
+				handler (this, e);
+		}
+
+		protected virtual void RaiseScrolledToTop (EventArgs e)
+		{
+			var handler = OnScrolledToTop;
+			if (handler != null)
+				handler (this, e);
+		}
+
+
+		protected virtual void RaiseScrollAnimationEnded (EventArgs e)
+		{
+			var handler = OnScrollAnimationEnded;
+			if (handler != null)
+				handler (this, e);
+		}
+
+		protected virtual void RaiseZoomingStarted (EventArgs e)
+		{
+			var handler = OnZoomingStarted;
+			if (handler != null)
+				handler (this, e);
+		}
+
+
+
+		protected virtual void RaiseZoomingEnded (EventArgs e)
+		{
+			var handler = OnZoomingEnded;
+			if (handler != null)
+				handler (this, e);
+		}
+
+		protected virtual void RaiseDidZoom (EventArgs e)
+		{
+			var handler = OnDidZoom;
+			if (handler != null)
+				handler (this, e);
+		}
+
+		protected virtual void RaiseDecelerationStarted (EventArgs e)
+		{
+			var handler = OnDecelerationStarted;
+			if (handler != null)
+				handler (this, e);
+		}
+
+		protected virtual void RaiseDecelerationEnded (EventArgs e)
+		{
+			var handler = OnDecelerationEnded;
+			if (handler != null)
+				handler (this, e);
+		}
+		#endregion
 	}
 }
 

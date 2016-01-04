@@ -7,11 +7,6 @@ namespace CoCore.iOS
 	public static class PlatformExtension
 	{
 
-		internal static bool IsPresent(Type type){
-			var typeInfo = type.GetTypeInfo ();
-			var isPresent = typeInfo.GetCustomAttribute <Present> () != null;
-			return isPresent;
-		}
 
 	    // ReSharper disable once InconsistentNaming
 		public static UIColor UIColorFromHexString (string hexValue, float alpha = 1.0f)
