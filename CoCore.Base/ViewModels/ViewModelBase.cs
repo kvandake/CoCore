@@ -7,7 +7,16 @@ namespace CoCore.Base
 	public abstract class ViewModelBase : INotifyPropertyChanged, IDisposable
 	{
 
-		public virtual string Title { get; set; }
+		string title;
+		public virtual string Title {
+			get {
+				return title;
+			}
+			set {
+				title = value;
+				OnPropertyChanged ();
+			}
+		}
 
 	    IBroadcast _broadcast;
 
