@@ -22,7 +22,7 @@ namespace CoCore.Base
         /// Add the range.
         /// </summary>
         /// <param name="items">Items.</param>
-        public void AddRange(IList<T> items)
+		public virtual void AddRange(IList<T> items)
         {
             if (items == null)
                 return;
@@ -34,13 +34,27 @@ namespace CoCore.Base
             OnCollectionChanged(new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Add, (IList)items, startIndex));
         }
 
+		public virtual void InsertWithSort(T item, Comparison<T> comparison){
+			int i = 0;
+			while (i < Items.Count && comparison (Items [i], item) < 0) {
+				i++;
+			}
+			Insert (i, item);
+		}
 
+		public virtual void InsertWithSort(T item, IComparer<T> comparer){
+			int i = 0;
+			while (i < Items.Count && comparer.Compare (Items [i], item) < 0) {
+				i++;
+			}
+			Insert (i, item);
+		}
 
         /// <summary>
         /// Remove the where.
         /// </summary>
         /// <param name="match">Match.</param>
-        public void RemoveWhere(Predicate<T> match)
+		public virtual void RemoveWhere(Predicate<T> match)
         {
             foreach (var item in Items.ToList())
             {
@@ -55,7 +69,7 @@ namespace CoCore.Base
         /// <summary>
         /// Reload this instance.
         /// </summary>
-        public void Reload()
+		public virtual void Reload()
         {
             OnCollectionChanged(new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Reset));
         }
@@ -68,7 +82,7 @@ namespace CoCore.Base
         /// Update the specified item.
         /// </summary>
         /// <param name="item">Item.</param>
-        public void Update(T item)
+		public virtual void Update(T item)
         {
             var index = IndexOf(item);
             OnCollectionChanged(new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Replace,
@@ -81,7 +95,7 @@ namespace CoCore.Base
         /// Update the specified index.
         /// </summary>
         /// <param name="index">Index.</param>
-        public void Update(int index)
+		public virtual void Update(int index)
         {
             var item = this[index];
             OnCollectionChanged(new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Replace,
@@ -94,7 +108,7 @@ namespace CoCore.Base
         /// Updates the notify.
         /// </summary>
         /// <param name="match">Match.</param>
-        public void UpdateNotify(Predicate<T> match)
+		public virtual void UpdateNotify(Predicate<T> match)
         {
             foreach (var item in Items)
             {
@@ -112,7 +126,7 @@ namespace CoCore.Base
         /// Update the specified action (if true then Replace Notify)
         /// </summary>
         /// <param name="action">Action.</param>
-        public void Update(Func<T, bool> action)
+		public virtual void Update(Func<T, bool> action)
         {
             foreach (var item in Items)
             {
@@ -130,23 +144,23 @@ namespace CoCore.Base
 
         #region Sorting 
 
-        public void Sort<TKey>(Func<T, TKey> keySelector, IComparer<TKey> comparer)
+		public virtual void Sort<TKey>(Func<T, TKey> keySelector, IComparer<TKey> comparer)
         {
             InternalSort(Items.OrderBy(keySelector, comparer));
         }
 
-        public void Sort<TKey>(Func<T, TKey> keySelector, Comparison<TKey> comparison)
+		public virtual void Sort<TKey>(Func<T, TKey> keySelector, Comparison<TKey> comparison)
         {
             InternalSort(Items.OrderBy(keySelector, new ComparisonComparer<TKey>(comparison)));
         }
 
-        public void Sort(Comparison<T> comparison)
+		public virtual void Sort(Comparison<T> comparison)
         {
             InternalSort(Items.OrderBy(comparison));
         }
 
 
-        void InternalSort(IEnumerable<T> sortedItems)
+		protected virtual void InternalSort(IEnumerable<T> sortedItems)
         {
             var sortedItemsList = sortedItems.ToList();
             foreach (var item in sortedItemsList)
