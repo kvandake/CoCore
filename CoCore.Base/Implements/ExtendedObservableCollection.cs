@@ -77,18 +77,18 @@ namespace CoCore.Base
 
         #region Update
 
-		public virtual void UpdateWithSort(T item, Comparison<T> comparison){
-			var oldPosition = IndexOf (item);
-			int newPosition = 0;
+		public virtual void UpdateWithSort(T update, Comparison<T> comparison){
+			var oldPosition = IndexOf (update);
+			int newPosition = -1;
 			var lastPosition = Items.Count - 1;
-			while (newPosition < Items.Count && comparison (Items [newPosition], item) < 0) {
+			do {
 				if (newPosition == lastPosition)
 					break;
 				newPosition++;
 				if (oldPosition != lastPosition && newPosition == oldPosition) {
 					newPosition++;
 				}
-			}				
+			} while (newPosition < Items.Count && comparison (Items [newPosition], update) < 0);				
 			Update (oldPosition);
 			if (oldPosition != newPosition) {
 				Move (oldPosition, newPosition);
@@ -97,16 +97,16 @@ namespace CoCore.Base
 
 		public virtual void UpdateWithSort(T item, IComparer<T> comparer){
 			var oldPosition = IndexOf (item);
-			int newPosition = 0;
+			int newPosition = -1;
 			var lastPosition = Items.Count - 1;
-			while (newPosition < Items.Count && comparer.Compare(Items [newPosition], item) < 0) {
+			do {
 				if (newPosition == lastPosition)
 					break;
 				newPosition++;
 				if (oldPosition != lastPosition && newPosition == oldPosition) {
 					newPosition++;
 				}
-			}
+			} while (newPosition < Items.Count && comparer.Compare (Items [newPosition], item) < 0);
 			Update (oldPosition);
 			if (oldPosition != newPosition) {
 				Move (oldPosition, newPosition);
