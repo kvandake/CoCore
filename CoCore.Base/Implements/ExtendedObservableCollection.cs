@@ -85,7 +85,7 @@ namespace CoCore.Base
 				if (newPosition == lastPosition)
 					break;
 				newPosition++;
-				if (newPosition == oldPosition) {
+				if (oldPosition != lastPosition && newPosition == oldPosition) {
 					newPosition++;
 				}
 			}				
@@ -103,7 +103,7 @@ namespace CoCore.Base
 				if (newPosition == lastPosition)
 					break;
 				newPosition++;
-				if (newPosition == oldPosition) {
+				if (oldPosition != lastPosition && newPosition == oldPosition) {
 					newPosition++;
 				}
 			}
