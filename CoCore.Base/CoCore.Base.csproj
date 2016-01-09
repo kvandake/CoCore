@@ -57,6 +57,7 @@
     <Compile Include="Navigation\Intent.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ViewModels\ViewModelBase.cs" />
+    <Compile Include="Implements\MessageData.cs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="Plugin.DeviceInfo, Version=2.0.0.0, Culture=neutral, processorArchitecture=MSIL">

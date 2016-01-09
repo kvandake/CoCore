@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Threading;
 
 namespace CoCore.Base
 {
@@ -12,6 +14,10 @@ namespace CoCore.Base
 		string CancelText { get; set;}
 
 		void Message(string text, string description,Action okClick,Action cancelClick, params object[] parameters);
+
+		void MessageForSelectItem<T>(string header, string description,List<MessageData<T>> items, Action cancelClick, params object[] parameters);
+
+		void Dismiss();
 
 		void Toast(string text, params object[] parameters);
 	}
