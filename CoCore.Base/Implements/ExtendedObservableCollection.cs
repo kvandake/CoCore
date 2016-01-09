@@ -77,6 +77,41 @@ namespace CoCore.Base
 
         #region Update
 
+		public virtual void UpdateWithSort(T item, Comparison<T> comparison){
+			var oldPosition = IndexOf (item);
+			int newPosition = 0;
+			var lastPosition = Items.Count - 1;
+			while (newPosition < Items.Count && comparison (Items [newPosition], item) < 0) {
+				if (newPosition == lastPosition)
+					break;
+				newPosition++;
+				if (newPosition == oldPosition) {
+					newPosition++;
+				}
+			}				
+			Update (oldPosition);
+			if (oldPosition != newPosition) {
+				Move (oldPosition, newPosition);
+			}
+		}
+
+		public virtual void UpdateWithSort(T item, IComparer<T> comparer){
+			var oldPosition = IndexOf (item);
+			int newPosition = 0;
+			var lastPosition = Items.Count - 1;
+			while (newPosition < Items.Count && comparer.Compare(Items [newPosition], item) < 0) {
+				if (newPosition == lastPosition)
+					break;
+				newPosition++;
+				if (newPosition == oldPosition) {
+					newPosition++;
+				}
+			}
+			Update (oldPosition);
+			if (oldPosition != newPosition) {
+				Move (oldPosition, newPosition);
+			}
+		}
 
         /// <summary>
         /// Update the specified item.
