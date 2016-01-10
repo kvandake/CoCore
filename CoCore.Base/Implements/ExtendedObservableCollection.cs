@@ -77,39 +77,33 @@ namespace CoCore.Base
 
         #region Update
 
+		//TODO Optimize sort
 		public virtual void UpdateWithSort(T update, Comparison<T> comparison){
-			var oldPosition = IndexOf (update);
-			int newPosition = -1;
-			var lastPosition = Items.Count - 1;
-			do {
-				if (newPosition == lastPosition)
-					break;
-				newPosition++;
-				if (oldPosition != lastPosition && newPosition == oldPosition) {
-					newPosition++;
+			var internalList = Items.OrderBy (comparison).ToList ();
+			Update (update);
+			foreach (var item in internalList) {
+				if (object.Equals (item, update)) {
+					var oldPosition = IndexOf (update);
+					var newPosition = internalList.IndexOf (update);
+					if (oldPosition != newPosition) {
+						Move (IndexOf (update), internalList.IndexOf (update));
+					}
 				}
-			} while (newPosition < Items.Count && comparison (Items [newPosition], update) < 0);				
-			Update (oldPosition);
-			if (oldPosition != newPosition) {
-				Move (oldPosition, newPosition);
 			}
 		}
 
-		public virtual void UpdateWithSort(T item, IComparer<T> comparer){
-			var oldPosition = IndexOf (item);
-			int newPosition = -1;
-			var lastPosition = Items.Count - 1;
-			do {
-				if (newPosition == lastPosition)
-					break;
-				newPosition++;
-				if (oldPosition != lastPosition && newPosition == oldPosition) {
-					newPosition++;
+		//TODO Optimize sort
+		public virtual void UpdateWithSort(T update, IComparer<T> comparer){
+			var internalList = Items.OrderBy (x => x, comparer).ToList ();
+			Update (update);
+			foreach (var item in internalList) {
+				if (object.Equals (item, update)) {
+					var oldPosition = IndexOf (update);
+					var newPosition = internalList.IndexOf (update);
+					if (oldPosition != newPosition) {
+						Move (IndexOf (update), internalList.IndexOf (update));
+					}
 				}
-			} while (newPosition < Items.Count && comparer.Compare (Items [newPosition], item) < 0);
-			Update (oldPosition);
-			if (oldPosition != newPosition) {
-				Move (oldPosition, newPosition);
 			}
 		}
 
